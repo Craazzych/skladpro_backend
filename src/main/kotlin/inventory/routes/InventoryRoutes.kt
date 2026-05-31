@@ -6,6 +6,7 @@ import com.skladpro.inventory.dto.InventoryItemRequest
 import com.skladpro.inventory.dto.StockOperationRequest
 import com.skladpro.inventory.mapper.toResponse
 import com.skladpro.inventory.service.InventoryService
+import com.skladpro.security.requireAdmin
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -26,6 +27,7 @@ fun Route.inventoryRoutes(service: InventoryService) {
         }
 
         post {
+            if (!call.requireAdmin()) return@post
             val request = call.receive<InventoryItemRequest>()
             val result = service.create(request)
             call.respondResult(
@@ -46,6 +48,7 @@ fun Route.inventoryRoutes(service: InventoryService) {
         }
 
         put("/{id}") {
+            if (!call.requireAdmin()) return@put
             val id = call.parameters["id"].orEmpty()
             val request = call.receive<InventoryItemRequest>()
             val result = service.update(id, request)
@@ -53,6 +56,7 @@ fun Route.inventoryRoutes(service: InventoryService) {
         }
 
         delete("/{id}") {
+            if (!call.requireAdmin()) return@delete
             val id = call.parameters["id"].orEmpty()
             val deleted = service.delete(id)
 
@@ -71,6 +75,7 @@ fun Route.inventoryRoutes(service: InventoryService) {
         }
 
         put("/{id}/delivery") {
+            if (!call.requireAdmin()) return@put
             val id = call.parameters["id"].orEmpty()
             val request = call.receive<DeliveryRequest>()
             val result = service.updateDelivery(id, request)

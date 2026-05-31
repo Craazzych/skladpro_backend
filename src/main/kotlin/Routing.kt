@@ -10,7 +10,11 @@ import com.skladpro.inventory.routes.inventoryRoutes
 import com.skladpro.inventory.repository.InMemoryInventoryRepository
 import com.skladpro.inventory.repository.PostgresInventoryRepository
 import com.skladpro.inventory.service.InventoryService
+import com.skladpro.security.JWT_PROVIDER
+import com.skladpro.security.JwtService
+import com.skladpro.security.configureJwtAuthentication
 import io.ktor.server.application.*
+import io.ktor.server.auth.authenticate
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
@@ -21,18 +25,23 @@ fun Application.configureRouting() {
         repository = createEmployeeRepository(passwordHasher),
         passwordHasher = passwordHasher
     )
-    configureAppRouting(inventoryService, employeeService)
+    val jwtService = JwtService.fromConfig(environment.config)
+    configureJwtAuthentication(jwtService)
+    configureAppRouting(inventoryService, employeeService, jwtService)
 }
 
 fun Application.configureInventoryRouting(inventoryService: InventoryService) {
     routing {
-        inventoryRoutes(inventoryService)
+        authenticate(JWT_PROVIDER) {
+            inventoryRoutes(inventoryService)
+        }
     }
 }
 
 fun Application.configureAppRouting(
     inventoryService: InventoryService,
-    employeeService: EmployeeService
+    employeeService: EmployeeService,
+    jwtService: JwtService
 ) {
     routing {
         get("/") {
@@ -41,9 +50,11 @@ fun Application.configureAppRouting(
         get("/health") {
             call.respond(mapOf("status" to "ok"))
         }
-        inventoryRoutes(inventoryService)
-        employeeRoutes(employeeService)
-        authRoutes(employeeService)
+        authenticate(JWT_PROVIDER) {
+            inventoryRoutes(inventoryService)
+            employeeRoutes(employeeService)
+        }
+        authRoutes(employeeService, jwtService)
     }
 }
 

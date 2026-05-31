@@ -8,6 +8,9 @@ import com.skladpro.employees.dto.LoginResponse
 import com.skladpro.employees.mapper.toResponse
 import com.skladpro.employees.model.Employee
 import com.skladpro.employees.service.EmployeeService
+import com.skladpro.security.JwtService
+import com.skladpro.security.currentEmployee
+import com.skladpro.security.requireAdmin
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -22,10 +25,12 @@ import io.ktor.server.routing.route
 fun Route.employeeRoutes(service: EmployeeService) {
     route("/api/employees") {
         get {
+            if (!call.requireAdmin()) return@get
             call.respond(service.getAll().map { it.toResponse() })
         }
 
         post {
+            if (!call.requireAdmin()) return@post
             val request = call.receive<CreateEmployeeRequest>()
             call.respondEmployeeResult(
                 result = service.create(request),
@@ -34,8 +39,9 @@ fun Route.employeeRoutes(service: EmployeeService) {
         }
 
         delete("/{id}") {
+            if (!call.requireAdmin()) return@delete
             val id = call.parameters["id"].orEmpty()
-            val actorId = call.request.headers["X-Actor-Employee-Id"].orEmpty()
+            val actorId = call.currentEmployee().employeeId
             service.delete(id, actorId).fold(
                 onSuccess = { call.respond(HttpStatusCode.NoContent) },
                 onFailure = { call.respondEmployeeError(it) }
@@ -44,7 +50,7 @@ fun Route.employeeRoutes(service: EmployeeService) {
     }
 }
 
-fun Route.authRoutes(service: EmployeeService) {
+fun Route.authRoutes(service: EmployeeService, jwtService: JwtService) {
     route("/api/auth") {
         post("/activate") {
             val request = call.receive<ActivateEmployeeRequest>()
@@ -58,7 +64,12 @@ fun Route.authRoutes(service: EmployeeService) {
             if (employee == null) {
                 call.respondEmployeeError(result.exceptionOrNull()!!)
             } else {
-                call.respond(LoginResponse(employee.toResponse()))
+                call.respond(
+                    LoginResponse(
+                        employee = employee.toResponse(),
+                        token = jwtService.issueToken(employee)
+                    )
+                )
             }
         }
     }

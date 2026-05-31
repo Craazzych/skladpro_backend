@@ -34,7 +34,8 @@ data class LoginRequest(
 
 @Serializable
 data class LoginResponse(
-    val employee: EmployeeResponse
+    val employee: EmployeeResponse,
+    val token: String
 )
 
 @Serializable

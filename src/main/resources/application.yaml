@@ -16,3 +16,9 @@ database:
   user: "postgres"
   password: ""
   maximumPoolSize: 5
+
+jwt:
+  secret: "$JWT_SECRET"
+  issuer: "skladpro-backend"
+  audience: "skladpro-android"
+  realm: "SkladPRO API"
