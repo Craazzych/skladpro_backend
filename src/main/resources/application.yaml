@@ -1,0 +1,18 @@
+ktor:
+  deployment:
+    port: 8080
+  application:
+    modules:
+      - com.skladpro.HttpKt.configureHttp
+      - com.skladpro.plugins.SerializationKt.configureSerialization
+      - com.skladpro.StatusPagesKt.configureStatusPages
+      - com.skladpro.RoutingKt.configureRouting
+
+storage:
+  mode: postgres
+
+database:
+  jdbcUrl: "jdbc:postgresql://localhost:5433/skladpro"
+  user: "postgres"
+  password: ""
+  maximumPoolSize: 5
